@@ -1,0 +1,1 @@
+ls update* | sort | xargs grep -F "18106|63.143.96.0/23"
