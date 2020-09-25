@@ -1,0 +1,1 @@
+ls update* | parallel --eta '~/Downloads/bgpdump-master/bgpdump -m -u {} > ./results/{}.txt'

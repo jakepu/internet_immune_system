@@ -3,8 +3,8 @@ from bs4 import BeautifulSoup
 import requests
 import wget
 import os
-bgp_url = 'http://archive.routeviews.org/bgpdata/'
-class bgp_collector:
+bgp_url = 'http://archive.routeviews.org/bgpdata/' # might need to put it in the class
+class BGP_Collector:
     def __init__(self):
         self.last_filename = ''
         self.local_path = os.path.dirname(os.path.realpath(__file__)) + '/../../../data/bgp_updates'
@@ -21,4 +21,4 @@ class bgp_collector:
             wget.download(self.bgp_directory + self.last_filename, out=self.local_path)
             
 if __name__ == '__main__':
-    bgp_collector()
+    BGP_Collector()
