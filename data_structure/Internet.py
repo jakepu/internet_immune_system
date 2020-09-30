@@ -2,6 +2,8 @@ import time
 import datetime
 import numpy as np
 
+# @to_do: do BFS using Customer > Peer > Provider order for trial() function
+# @to_do: grpah component need to change to three sets to provide three kinds of neighbors
 class Internet:
     def __init__(self, last_updated_time, AS_set=None, graph_component = None):
         if(isinstance(last_updated_time, datetime.datetime)):
@@ -16,11 +18,13 @@ class Internet:
                 flag = False
                 print('Error: Internet: graph component does not match the AS numbers passed in ', key)
         if flag:
-            self.AS_graph = graph(graph_component, AS_set)
-        for number in self.AS_numbers:
-            if number not in self.AS_graph.getVertices():
-                self.AS_graph.gdict[number] = []
-            
+            for key in graph_component:
+                for neighbors in graph_component[key]:
+                    tmp = self.get_AS_by_number(key)
+                    neighbor_tmp = self.get_AS_by_number(neighbors)
+                    # one direction, can change to two direction
+                    tmp.set_neighbors(np.array([neighbor_tmp], dtype = object))
+                
     def set_AS_set(self, AS_set):
         AS_number = []
         for AS in AS_set:
@@ -30,7 +34,14 @@ class Internet:
             else:
                 print('Error: Internet: redundent AS number ', AS.number)
         return AS_number
-                
+    
+    def get_AS_by_number(self, as_number):
+        for AS in self.AS_set:
+            if AS.number == as_number:
+                return AS
+        print("AS not in as set")
+        return None
+    
     def add_connection(self, AS1, AS2):
         if AS1.number not in self.AS_numbers:
             self.AS_numbers.append(AS1.number)
@@ -38,57 +49,53 @@ class Internet:
         if AS2.number not in self.AS_numbers:
             self.AS_numbers.append(AS2.number)
             self.AS_set = np.append(self.AS_set, AS2)
-        edge = set([AS1.number, AS2.number])
-        (vrtx1, vrtx2) = tuple(edge)
-        if vrtx1 in self.AS_graph.gdict:
-            self.AS_graph.gdict[vrtx1].append(vrtx2)
-        else:
-            self.AS_graph.gdict[vrtx1] = [vrtx2]
-        if vrtx2 in self.AS_graph.gdict:
-            self.AS_graph.gdict[vrtx2].append(vrtx1)
-        else:
-            self.AS_graph.gdict[vrtx2] = [vrtx1]
-        
-# This graph part needs to be modified so each node represents a AS object
-class graph:
-    
-    def __init__(self,gdict=None, AS_set=None):
-        if gdict is None:
-            gdict = {}
-        self.gdict = gdict
-
-    def edges(self):
-        return self.findedges()
-
-    def getVertices(self):
-        return list(self.gdict.keys())
-
-    # List the edge names
-    def findedges(self):
-        edgename = []
-        for vrtx in self.gdict:
-            for nxtvrtx in self.gdict[vrtx]:
-                if {nxtvrtx, vrtx} not in edgename:
-                    edgename.append({vrtx, nxtvrtx})
-        return edgename
-    #return the distance between two vertices
-    def trial(self, v1, v2):
-        queue = [v1]
+        # one direction, can change to two direction by add following
+        # AS2.set_neighbors(np.array([AS1], dtype = object))
+        AS1.set_neighbors(np.array([AS2], dtype = object))
+    def trial(self, AS1, AS2):
+        queue = np.array([AS1],dtype = object)
         trial = {}
-        visited = {v1 : 1}
-        while queue:
-            current = queue.pop(0)
-            if current == v2:
-                result = [v2]
-                while v2 in trial:
-                    v2 = trial[v2]
-                    result.insert(0, v2)
+        visited = {AS1.number: 1}
+        while queue.size > 0:
+            current = queue[-1]
+            queue = queue[:-1]
+            if current.number == AS2.number:
+                result = [AS2.number]
+                while AS2.number in trial:
+                    AS2.number = trial[AS2.number]
+                    result.insert(0, AS2.number)
                 return result
-            for neighbor in self.gdict[current]:
-                if neighbor not in visited:
-                    trial[neighbor] = current
-                    queue.append(neighbor)
-                    visited[neighbor] = 1
+            for neighbor in current.neighbors:
+                if neighbor.number not in visited:
+                    trial[neighbor.number] = current.number
+                    queue = np.append(neighbor, queue)
+                    visited[neighbor.number] = 1
         return []
-    def distance(self, v1, v2):
-        return len(trial(self, v1, v2))
+    def distance(self, AS1, AS2):
+        len_trial = len(self.trial(AS1, AS2))
+        if len_trial > 1:
+            return len_trial - 1;
+        print("The input ASes are not connected, or inputs are the same")
+        return 0
+    
+    def get_edges(self):
+        edgename = []
+        for AS in self.AS_set:
+            for neighbor in AS.neighbors:
+                if {AS.number, neighbor.number} not in edgename:
+                    edgename.append({AS.number, neighbor.number})
+        return edgename
+    def get_vertices(self):
+        vtx = []
+        for AS in self.AS_set:
+            if AS.number not in self.AS_set:
+                vtx.append(AS.number)
+        return vtx  
+    def get_prefix_set(self):
+        prefixes = np.array([], dtype = object)
+        for AS in self.AS_set:
+            for routers in AS.routers:
+                for prefix in routers.prefix_set:
+                    if prefix not in prefixes:
+                        prefixes = np.append(prefix, prefixes)
+        return prefixes

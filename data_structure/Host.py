@@ -24,13 +24,3 @@ class Host:
             self.SSL_version = SSL_version
         else:
             print("Error: Hosts: SSL_version type does not match")
-    def get_Prefix(self):
-        cout_dot = 0
-        result = ""
-        for char in self.IP:
-            if (char == '.'):
-                cout_dot += 1
-                if(cout_dot == 2):
-                    break
-            result += char
-        return result + ".0.1/24"
