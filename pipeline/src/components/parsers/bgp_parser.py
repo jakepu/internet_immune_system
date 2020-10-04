@@ -1,21 +1,20 @@
 import os
 import pandas as pd
+import datetime
 class BGP_Parser:
 
     def __init__(self):
-        self._parsed = None
         self._data_src = os.path.dirname(os.path.realpath(__file__)) + '/../../../data/bgp_updates'
         self._data_src = os.path.realpath(self._data_src)
         self._dump_exec_path = os.path.dirname(os.path.realpath(__file__)) + '/../externals/bgpdump'
         self._dump_exec_path = os.path.realpath(self._dump_exec_path)
         self._dump_path = self._data_src + '/dumps/'
         self._parquet_path = self._data_src + '/parquets/'
-    def get_data(self):
+    def get_data(self, start_time, end_time, mode):
         """ Returns the most recent parsed object """
-        if not self._parsed:
-            # Need to read and parse data from file
-            raw_data = self._read_data_from_file()
-            self._parsed = self._parse(raw_data)
+        # Need to read and parse data from file
+        raw_data = self._read_data_from_file(start_time, end_time)
+        self._parsed = self._parse(raw_data)
 
         print('parser ' + self._data_src +' now has ' + str(self._parsed.timestamp))
         return self._parsed
