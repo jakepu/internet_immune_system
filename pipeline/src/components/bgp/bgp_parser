@@ -34,7 +34,9 @@
     "from datetime import timedelta\n",
     "import numpy as np\n",
     "from bgp_collector import BGP_Collector\n",
-    "from datetime import timezone"
+    "from datetime import timezone\n",
+    "from parsed_obj import ParsedObj\n",
+    "from multiprocessing import Pool"
    ]
   },
   {
@@ -211,6 +213,49 @@
    "outputs": [],
    "source": [
     "check.loc[:,'Withdraw or Announce'] = 'A'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "check.iloc[1]['unix time in seconds']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "path = '/home/jake/Documents/Coding/data-pipeline/pipeline/data/bgp_tmp/output.csv'\n",
+    "df = pd.read_csv(path, sep=',')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "parsed = []\n",
+    "for i in df.index:\n",
+    "    parsed.append(ParsedObj(df.iloc[i]['unix time in seconds'],'bgp',df.iloc[i].to_json))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "parsed = []\n",
+    "def test_append(i):\n",
+    "    parsed.append(ParsedObj(df.iloc[i]['unix time in seconds'],'bgp',df.iloc[i].to_json))\n",
+    "with Pool() as p:\n",
+    "    p.map(test_append, df.index)"
    ]
   },
   {

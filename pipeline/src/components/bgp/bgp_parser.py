@@ -6,7 +6,8 @@ from datetime import timedelta
 from datetime import timezone
 import numpy as np
 from bgp_collector import BGP_Collector
-from components.parsed_obj import ParsedObj
+from parsed_obj import ParsedObj
+from multiprocessing import Pool
 class BGP_Parser:
 
     def __init__(self, collector = None): # actual deployment: collector = BGP_Collector()
@@ -64,8 +65,10 @@ class BGP_Parser:
         """ This call parse the raw_data into a parsed object """
         # <class 'pandas.core.frame.Pandas'>
         self._parsed = []
-        for i in df.index:
+        def multithreaded_append(i):
             self._parsed.append(ParsedObj(df.iloc[i]['unix time in seconds'],'bgp',df.iloc[i].to_json))
+        with Pool() as p:
+            p.map(multithreaded_append, df.index)
         return self._parsed
     def _read_update_from_file(self, update_filename):
         update_csv_path = self._dump_path+'/'+update_filename+'.csv'
@@ -75,8 +78,8 @@ class BGP_Parser:
         df_update = pd.read_csv(update_csv_path, sep='|', names = self._names, header = None, usecols =range(len(self._names)))
         return df_update
     def _read_rib_from_file(self, start_time):
-        # if start_time <= datetime(2003,2,3,19,32,tzinfo=timezone.utc):
-        #     raise LookupError('Data before 2003/02/03 19:32 UTC is in Pacific Time, algorithm not implemented for tricky data')
+        if start_time <= datetime(2003,2,3,19,32,tzinfo=timezone.utc):
+            raise LookupError('Data before 2003/02/03 19:32 UTC is in Pacific Time, algorithm not implemented for tricky data')
         dir_name = self._data_src + '/{}.{}/RIBS/'.format(start_time.year, start_time.month)
         # the following two line work as an edge detector - detect the first update after start_time
         last_state = False
@@ -138,4 +141,4 @@ class BGP_Parser:
         self._parsed = None
 
 if __name__ == '__main__':
-    print(BGP_Parser()._read_rib_from_file(datetime(2001,10,26,23,50,tzinfo=timezone.utc))[1])
+    print(BGP_Parser()._read_rib_from_file(datetime(2020,9,26,23,50,tzinfo=timezone.utc))[1])
