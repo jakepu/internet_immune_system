@@ -1,0 +1,541 @@
+{
+ "metadata": {
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.3-final"
+  },
+  "orig_nbformat": 2,
+  "kernelspec": {
+   "name": "python3",
+   "display_name": "Python 3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2,
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import subprocess\n",
+    "import os\n",
+    "import pandas as pd\n",
+    "from datetime import datetime\n",
+    "from datetime import timedelta\n",
+    "import numpy as np\n",
+    "from bgp_collector import BGP_Collector"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "names =['BGP protocol','unix time in seconds','Withdraw or Announce','PeerIP','PeerAS','Prefix','AS_PATH','Origin','Next_Hop','Local_Pref','MED','Community','AtomicAGG','AGGREGATOR']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rib_csv_path = '/home/jake/Documents/Coding/data-pipeline/pipeline/data/bgp_tmp/rib.20011026.1648.bz2.csv'\n",
+    "df = pd.read_csv(rib_csv_path, sep='|', names = names, header = None, usecols =range(len(names)), dtype={'unix time in seconds':'float64'})"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {},
+   "outputs": [
+    {
+     "output_type": "execute_result",
+     "data": {
+      "text/plain": [
+       "        BGP protocol  unix time in seconds Withdraw or Announce  \\\n",
+       "0         TABLE_DUMP          1.004140e+09                    B   \n",
+       "1         TABLE_DUMP          1.004140e+09                    B   \n",
+       "2         TABLE_DUMP          1.004140e+09                    B   \n",
+       "3         TABLE_DUMP          1.004140e+09                    B   \n",
+       "4         TABLE_DUMP          1.004140e+09                    B   \n",
+       "...              ...                   ...                  ...   \n",
+       "1526196   TABLE_DUMP          1.004140e+09                    B   \n",
+       "1526197   TABLE_DUMP          1.004140e+09                    B   \n",
+       "1526198   TABLE_DUMP          1.004140e+09                    B   \n",
+       "1526199   TABLE_DUMP          1.004140e+09                    B   \n",
+       "1526200   TABLE_DUMP          1.004140e+09                    B   \n",
+       "\n",
+       "                 PeerIP  PeerAS            Prefix                   AS_PATH  \\\n",
+       "0         209.244.2.115    3356         3.0.0.0/8               3356 701 80   \n",
+       "1        204.42.253.253     267         3.0.0.0/8           267 2914 701 80   \n",
+       "2          129.250.0.11    2914         3.0.0.0/8               2914 701 80   \n",
+       "3          147.28.255.2    3130         3.0.0.0/8          3130 7018 701 80   \n",
+       "4           167.142.3.6    5056         3.0.0.0/8               5056 701 80   \n",
+       "...                 ...     ...               ...                       ...   \n",
+       "1526196  144.228.241.81    1239  218.184.192.0/18       1239 6461 9902 9415   \n",
+       "1526197    199.74.221.1    8121  218.184.192.0/18       8121 6461 9902 9415   \n",
+       "1526198     129.250.0.6    2914  218.184.192.0/18       2914 6461 9902 9415   \n",
+       "1526199     167.142.3.6    5056  218.184.192.0/18   5056 701 6461 9902 9415   \n",
+       "1526200    147.28.255.2    3130  218.184.192.0/18  3130 7018 6461 9902 9415   \n",
+       "\n",
+       "        Origin        Next_Hop  Local_Pref  MED  \\\n",
+       "0          IGP   209.244.2.115           0    0   \n",
+       "1          IGP  204.42.253.253           0    0   \n",
+       "2          IGP    129.250.0.11           0    9   \n",
+       "3          IGP    147.28.255.2           0    0   \n",
+       "4          EGP     167.142.3.6           0    0   \n",
+       "...        ...             ...         ...  ...   \n",
+       "1526196    IGP  144.228.241.81           0   19   \n",
+       "1526197    IGP    199.74.221.1           0    0   \n",
+       "1526198    IGP     129.250.0.6           0   12   \n",
+       "1526199    IGP     167.142.3.6           0    0   \n",
+       "1526200    IGP    147.28.255.2           0    0   \n",
+       "\n",
+       "                                                 Community AtomicAGG  \\\n",
+       "0        3356:3 3356:86 3356:575 3356:666 3356:668 3356...       NAG   \n",
+       "1                                                 267:2914       NAG   \n",
+       "2                                                 2914:420       NAG   \n",
+       "3                                        3130:200 3130:300       NAG   \n",
+       "4                                                      NaN       NAG   \n",
+       "...                                                    ...       ...   \n",
+       "1526196                                 1239:666 1239:1000       NAG   \n",
+       "1526197                                          6461:5998       NAG   \n",
+       "1526198                                           2914:420       NAG   \n",
+       "1526199                                                NaN       NAG   \n",
+       "1526200                                  3130:200 3130:300       NAG   \n",
+       "\n",
+       "        AGGREGATOR  \n",
+       "0              NaN  \n",
+       "1              NaN  \n",
+       "2              NaN  \n",
+       "3              NaN  \n",
+       "4              NaN  \n",
+       "...            ...  \n",
+       "1526196        NaN  \n",
+       "1526197        NaN  \n",
+       "1526198        NaN  \n",
+       "1526199        NaN  \n",
+       "1526200        NaN  \n",
+       "\n",
+       "[1526201 rows x 14 columns]"
+      ],
+      "text/html": "<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>BGP protocol</th>\n      <th>unix time in seconds</th>\n      <th>Withdraw or Announce</th>\n      <th>PeerIP</th>\n      <th>PeerAS</th>\n      <th>Prefix</th>\n      <th>AS_PATH</th>\n      <th>Origin</th>\n      <th>Next_Hop</th>\n      <th>Local_Pref</th>\n      <th>MED</th>\n      <th>Community</th>\n      <th>AtomicAGG</th>\n      <th>AGGREGATOR</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>209.244.2.115</td>\n      <td>3356</td>\n      <td>3.0.0.0/8</td>\n      <td>3356 701 80</td>\n      <td>IGP</td>\n      <td>209.244.2.115</td>\n      <td>0</td>\n      <td>0</td>\n      <td>3356:3 3356:86 3356:575 3356:666 3356:668 3356...</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>204.42.253.253</td>\n      <td>267</td>\n      <td>3.0.0.0/8</td>\n      <td>267 2914 701 80</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>0</td>\n      <td>0</td>\n      <td>267:2914</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.11</td>\n      <td>2914</td>\n      <td>3.0.0.0/8</td>\n      <td>2914 701 80</td>\n      <td>IGP</td>\n      <td>129.250.0.11</td>\n      <td>0</td>\n      <td>9</td>\n      <td>2914:420</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>147.28.255.2</td>\n      <td>3130</td>\n      <td>3.0.0.0/8</td>\n      <td>3130 7018 701 80</td>\n      <td>IGP</td>\n      <td>147.28.255.2</td>\n      <td>0</td>\n      <td>0</td>\n      <td>3130:200 3130:300</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>167.142.3.6</td>\n      <td>5056</td>\n      <td>3.0.0.0/8</td>\n      <td>5056 701 80</td>\n      <td>EGP</td>\n      <td>167.142.3.6</td>\n      <td>0</td>\n      <td>0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>...</th>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n    </tr>\n    <tr>\n      <th>1526196</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>144.228.241.81</td>\n      <td>1239</td>\n      <td>218.184.192.0/18</td>\n      <td>1239 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>144.228.241.81</td>\n      <td>0</td>\n      <td>19</td>\n      <td>1239:666 1239:1000</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>1526197</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>199.74.221.1</td>\n      <td>8121</td>\n      <td>218.184.192.0/18</td>\n      <td>8121 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>199.74.221.1</td>\n      <td>0</td>\n      <td>0</td>\n      <td>6461:5998</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>1526198</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.6</td>\n      <td>2914</td>\n      <td>218.184.192.0/18</td>\n      <td>2914 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>129.250.0.6</td>\n      <td>0</td>\n      <td>12</td>\n      <td>2914:420</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>1526199</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>167.142.3.6</td>\n      <td>5056</td>\n      <td>218.184.192.0/18</td>\n      <td>5056 701 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>167.142.3.6</td>\n      <td>0</td>\n      <td>0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>1526200</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>147.28.255.2</td>\n      <td>3130</td>\n      <td>218.184.192.0/18</td>\n      <td>3130 7018 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>147.28.255.2</td>\n      <td>0</td>\n      <td>0</td>\n      <td>3130:200 3130:300</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n  </tbody>\n</table>\n<p>1526201 rows × 14 columns</p>\n</div>"
+     },
+     "metadata": {},
+     "execution_count": 31
+    }
+   ],
+   "source": [
+    "df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "update_csv_path = '/home/jake/Documents/Coding/data-pipeline/pipeline/data/bgp_tmp/updates.20011026.1648.bz2.csv'\n",
+    "df_update = pd.read_csv(update_csv_path, sep='|', names = names, header = None, usecols =range(len(names)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {},
+   "outputs": [
+    {
+     "output_type": "execute_result",
+     "data": {
+      "text/plain": [
+       "      BGP protocol  unix time in seconds Withdraw or Announce          PeerIP  \\\n",
+       "0           BGP4MP            1004140095                    A  208.51.113.254   \n",
+       "1           BGP4MP            1004140095                    A  208.51.113.254   \n",
+       "2           BGP4MP            1004140095                    A  208.51.113.254   \n",
+       "3           BGP4MP            1004140095                    A  208.51.113.254   \n",
+       "4           BGP4MP            1004140095                    A  208.51.113.254   \n",
+       "...            ...                   ...                  ...             ...   \n",
+       "24329       BGP4MP            1004140992                    A  208.186.154.36   \n",
+       "24330       BGP4MP            1004140992                    A  208.186.154.36   \n",
+       "24331       BGP4MP            1004140992                    A  208.186.154.36   \n",
+       "24332       BGP4MP            1004140992                    A  208.186.154.36   \n",
+       "24333       BGP4MP            1004140992                    A  208.186.154.36   \n",
+       "\n",
+       "       PeerAS            Prefix              AS_PATH Origin        Next_Hop  \\\n",
+       "0        3549    200.16.82.0/24      3549 7908 10671    IGP  208.51.113.254   \n",
+       "1        3549     200.9.75.0/24      3549 7908 10671    IGP  208.51.113.254   \n",
+       "2        3549    200.16.80.0/24      3549 7908 10671    IGP  208.51.113.254   \n",
+       "3        3549    200.16.81.0/24      3549 7908 10671    IGP  208.51.113.254   \n",
+       "4        3549    200.26.26.0/24      3549 7908 11063    IGP  208.51.113.254   \n",
+       "...       ...               ...                  ...    ...             ...   \n",
+       "24329    5650    203.14.87.0/24         5650 701 703    IGP  208.186.154.36   \n",
+       "24330    5650   216.141.24.0/23      5650 6395 16750    IGP  208.186.154.36   \n",
+       "24331    5650   216.141.60.0/23      5650 6395 16750    IGP  208.186.154.36   \n",
+       "24332    5650    212.110.0.0/19  5650 1239 1299 8736    IGP  208.186.154.36   \n",
+       "24333    5650  213.198.128.0/18  5650 1239 1299 8736    IGP  208.186.154.36   \n",
+       "\n",
+       "       Local_Pref  MED             Community AtomicAGG AGGREGATOR  \n",
+       "0             0.0  0.0  3549:4937 3549:30840       NAG        NaN  \n",
+       "1             0.0  0.0  3549:4937 3549:30840       NAG        NaN  \n",
+       "2             0.0  0.0  3549:4937 3549:30840       NAG        NaN  \n",
+       "3             0.0  0.0  3549:4937 3549:30840       NAG        NaN  \n",
+       "4             0.0  0.0  3549:4937 3549:30840       NAG        NaN  \n",
+       "...           ...  ...                   ...       ...        ...  \n",
+       "24329         0.0  0.0                   NaN       NAG        NaN  \n",
+       "24330         0.0  0.0                   NaN       NAG        NaN  \n",
+       "24331         0.0  0.0                   NaN       NAG        NaN  \n",
+       "24332         0.0  0.0                   NaN       NAG        NaN  \n",
+       "24333         0.0  0.0                   NaN       NAG        NaN  \n",
+       "\n",
+       "[24334 rows x 14 columns]"
+      ],
+      "text/html": "<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>BGP protocol</th>\n      <th>unix time in seconds</th>\n      <th>Withdraw or Announce</th>\n      <th>PeerIP</th>\n      <th>PeerAS</th>\n      <th>Prefix</th>\n      <th>AS_PATH</th>\n      <th>Origin</th>\n      <th>Next_Hop</th>\n      <th>Local_Pref</th>\n      <th>MED</th>\n      <th>Community</th>\n      <th>AtomicAGG</th>\n      <th>AGGREGATOR</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>BGP4MP</td>\n      <td>1004140095</td>\n      <td>A</td>\n      <td>208.51.113.254</td>\n      <td>3549</td>\n      <td>200.16.82.0/24</td>\n      <td>3549 7908 10671</td>\n      <td>IGP</td>\n      <td>208.51.113.254</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>3549:4937 3549:30840</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>BGP4MP</td>\n      <td>1004140095</td>\n      <td>A</td>\n      <td>208.51.113.254</td>\n      <td>3549</td>\n      <td>200.9.75.0/24</td>\n      <td>3549 7908 10671</td>\n      <td>IGP</td>\n      <td>208.51.113.254</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>3549:4937 3549:30840</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>BGP4MP</td>\n      <td>1004140095</td>\n      <td>A</td>\n      <td>208.51.113.254</td>\n      <td>3549</td>\n      <td>200.16.80.0/24</td>\n      <td>3549 7908 10671</td>\n      <td>IGP</td>\n      <td>208.51.113.254</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>3549:4937 3549:30840</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>BGP4MP</td>\n      <td>1004140095</td>\n      <td>A</td>\n      <td>208.51.113.254</td>\n      <td>3549</td>\n      <td>200.16.81.0/24</td>\n      <td>3549 7908 10671</td>\n      <td>IGP</td>\n      <td>208.51.113.254</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>3549:4937 3549:30840</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>BGP4MP</td>\n      <td>1004140095</td>\n      <td>A</td>\n      <td>208.51.113.254</td>\n      <td>3549</td>\n      <td>200.26.26.0/24</td>\n      <td>3549 7908 11063</td>\n      <td>IGP</td>\n      <td>208.51.113.254</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>3549:4937 3549:30840</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>...</th>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n    </tr>\n    <tr>\n      <th>24329</th>\n      <td>BGP4MP</td>\n      <td>1004140992</td>\n      <td>A</td>\n      <td>208.186.154.36</td>\n      <td>5650</td>\n      <td>203.14.87.0/24</td>\n      <td>5650 701 703</td>\n      <td>IGP</td>\n      <td>208.186.154.36</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>24330</th>\n      <td>BGP4MP</td>\n      <td>1004140992</td>\n      <td>A</td>\n      <td>208.186.154.36</td>\n      <td>5650</td>\n      <td>216.141.24.0/23</td>\n      <td>5650 6395 16750</td>\n      <td>IGP</td>\n      <td>208.186.154.36</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>24331</th>\n      <td>BGP4MP</td>\n      <td>1004140992</td>\n      <td>A</td>\n      <td>208.186.154.36</td>\n      <td>5650</td>\n      <td>216.141.60.0/23</td>\n      <td>5650 6395 16750</td>\n      <td>IGP</td>\n      <td>208.186.154.36</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>24332</th>\n      <td>BGP4MP</td>\n      <td>1004140992</td>\n      <td>A</td>\n      <td>208.186.154.36</td>\n      <td>5650</td>\n      <td>212.110.0.0/19</td>\n      <td>5650 1239 1299 8736</td>\n      <td>IGP</td>\n      <td>208.186.154.36</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n    <tr>\n      <th>24333</th>\n      <td>BGP4MP</td>\n      <td>1004140992</td>\n      <td>A</td>\n      <td>208.186.154.36</td>\n      <td>5650</td>\n      <td>213.198.128.0/18</td>\n      <td>5650 1239 1299 8736</td>\n      <td>IGP</td>\n      <td>208.186.154.36</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n    </tr>\n  </tbody>\n</table>\n<p>24334 rows × 14 columns</p>\n</div>"
+     },
+     "metadata": {},
+     "execution_count": 33
+    }
+   ],
+   "source": [
+    "df_update"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df = df.merge(df_update, on=('PeerAS','Prefix'), how='outer',indicator=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "metadata": {},
+   "outputs": [
+    {
+     "output_type": "execute_result",
+     "data": {
+      "text/plain": [
+       "        BGP protocol_x  unix time in seconds_x Withdraw or Announce_x  \\\n",
+       "0           TABLE_DUMP            1.004140e+09                      B   \n",
+       "1           TABLE_DUMP            1.004140e+09                      B   \n",
+       "2           TABLE_DUMP            1.004140e+09                      B   \n",
+       "3           TABLE_DUMP            1.004140e+09                      B   \n",
+       "4           TABLE_DUMP            1.004140e+09                      B   \n",
+       "...                ...                     ...                    ...   \n",
+       "1547770            NaN                     NaN                    NaN   \n",
+       "1547771            NaN                     NaN                    NaN   \n",
+       "1547772            NaN                     NaN                    NaN   \n",
+       "1547773            NaN                     NaN                    NaN   \n",
+       "1547774            NaN                     NaN                    NaN   \n",
+       "\n",
+       "               PeerIP_x  PeerAS          Prefix         AS_PATH_x Origin_x  \\\n",
+       "0         209.244.2.115    3356       3.0.0.0/8       3356 701 80      IGP   \n",
+       "1        204.42.253.253     267       3.0.0.0/8   267 2914 701 80      IGP   \n",
+       "2          129.250.0.11    2914       3.0.0.0/8       2914 701 80      IGP   \n",
+       "3           129.250.0.6    2914       3.0.0.0/8       2914 701 80      IGP   \n",
+       "4          147.28.255.2    3130       3.0.0.0/8  3130 7018 701 80      IGP   \n",
+       "...                 ...     ...             ...               ...      ...   \n",
+       "1547770             NaN     715  203.157.0.0/16               NaN      NaN   \n",
+       "1547771             NaN     267  203.157.0.0/16               NaN      NaN   \n",
+       "1547772             NaN   19669  203.157.0.0/16               NaN      NaN   \n",
+       "1547773             NaN   19669  203.157.0.0/16               NaN      NaN   \n",
+       "1547774             NaN    8121  200.30.42.0/24               NaN      NaN   \n",
+       "\n",
+       "             Next_Hop_x  Local_Pref_x  ...        PeerIP_y  \\\n",
+       "0         209.244.2.115           0.0  ...             NaN   \n",
+       "1        204.42.253.253           0.0  ...             NaN   \n",
+       "2          129.250.0.11           0.0  ...             NaN   \n",
+       "3           129.250.0.6           0.0  ...             NaN   \n",
+       "4          147.28.255.2           0.0  ...             NaN   \n",
+       "...                 ...           ...  ...             ...   \n",
+       "1547770             NaN           NaN  ...      157.22.9.7   \n",
+       "1547771             NaN           NaN  ...  204.42.253.253   \n",
+       "1547772             NaN           NaN  ...   216.220.176.1   \n",
+       "1547773             NaN           NaN  ...   216.220.176.1   \n",
+       "1547774             NaN           NaN  ...    199.74.221.1   \n",
+       "\n",
+       "                               AS_PATH_y Origin_y      Next_Hop_y  \\\n",
+       "0                                    NaN      NaN             NaN   \n",
+       "1                                    NaN      NaN             NaN   \n",
+       "2                                    NaN      NaN             NaN   \n",
+       "3                                    NaN      NaN             NaN   \n",
+       "4                                    NaN      NaN             NaN   \n",
+       "...                                  ...      ...             ...   \n",
+       "1547770         715 1239 11919 4765 9649      IGP      157.22.9.7   \n",
+       "1547771    267 2914 7018 11919 4765 9649      IGP  204.42.253.253   \n",
+       "1547772  19669 6461 7018 11919 4765 9649      IGP   216.220.176.1   \n",
+       "1547773        19669 6461 7473 4765 9649      IGP   216.220.176.1   \n",
+       "1547774        8121 6461 6453 13489 7997      IGP    199.74.221.1   \n",
+       "\n",
+       "        Local_Pref_y  MED_y Community_y AtomicAGG_y AGGREGATOR_y      _merge  \n",
+       "0                NaN    NaN         NaN         NaN          NaN   left_only  \n",
+       "1                NaN    NaN         NaN         NaN          NaN   left_only  \n",
+       "2                NaN    NaN         NaN         NaN          NaN   left_only  \n",
+       "3                NaN    NaN         NaN         NaN          NaN   left_only  \n",
+       "4                NaN    NaN         NaN         NaN          NaN   left_only  \n",
+       "...              ...    ...         ...         ...          ...         ...  \n",
+       "1547770          0.0    0.0         NaN         NAG          NaN  right_only  \n",
+       "1547771          0.0    0.0    267:2914         NAG          NaN  right_only  \n",
+       "1547772          0.0    0.0   6461:5997         NAG          NaN  right_only  \n",
+       "1547773          0.0    0.0   6461:5997         NAG          NaN  right_only  \n",
+       "1547774          0.0    0.0   6461:5997         NAG          NaN  right_only  \n",
+       "\n",
+       "[1547775 rows x 27 columns]"
+      ],
+      "text/html": "<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>BGP protocol_x</th>\n      <th>unix time in seconds_x</th>\n      <th>Withdraw or Announce_x</th>\n      <th>PeerIP_x</th>\n      <th>PeerAS</th>\n      <th>Prefix</th>\n      <th>AS_PATH_x</th>\n      <th>Origin_x</th>\n      <th>Next_Hop_x</th>\n      <th>Local_Pref_x</th>\n      <th>...</th>\n      <th>PeerIP_y</th>\n      <th>AS_PATH_y</th>\n      <th>Origin_y</th>\n      <th>Next_Hop_y</th>\n      <th>Local_Pref_y</th>\n      <th>MED_y</th>\n      <th>Community_y</th>\n      <th>AtomicAGG_y</th>\n      <th>AGGREGATOR_y</th>\n      <th>_merge</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>209.244.2.115</td>\n      <td>3356</td>\n      <td>3.0.0.0/8</td>\n      <td>3356 701 80</td>\n      <td>IGP</td>\n      <td>209.244.2.115</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>204.42.253.253</td>\n      <td>267</td>\n      <td>3.0.0.0/8</td>\n      <td>267 2914 701 80</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.11</td>\n      <td>2914</td>\n      <td>3.0.0.0/8</td>\n      <td>2914 701 80</td>\n      <td>IGP</td>\n      <td>129.250.0.11</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.6</td>\n      <td>2914</td>\n      <td>3.0.0.0/8</td>\n      <td>2914 701 80</td>\n      <td>IGP</td>\n      <td>129.250.0.6</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>147.28.255.2</td>\n      <td>3130</td>\n      <td>3.0.0.0/8</td>\n      <td>3130 7018 701 80</td>\n      <td>IGP</td>\n      <td>147.28.255.2</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>...</th>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n    </tr>\n    <tr>\n      <th>1547770</th>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>715</td>\n      <td>203.157.0.0/16</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>...</td>\n      <td>157.22.9.7</td>\n      <td>715 1239 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>157.22.9.7</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547771</th>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>267</td>\n      <td>203.157.0.0/16</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>...</td>\n      <td>204.42.253.253</td>\n      <td>267 2914 7018 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>267:2914</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547772</th>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>19669</td>\n      <td>203.157.0.0/16</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>...</td>\n      <td>216.220.176.1</td>\n      <td>19669 6461 7018 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>216.220.176.1</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>6461:5997</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547773</th>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>19669</td>\n      <td>203.157.0.0/16</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>...</td>\n      <td>216.220.176.1</td>\n      <td>19669 6461 7473 4765 9649</td>\n      <td>IGP</td>\n      <td>216.220.176.1</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>6461:5997</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547774</th>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>8121</td>\n      <td>200.30.42.0/24</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>...</td>\n      <td>199.74.221.1</td>\n      <td>8121 6461 6453 13489 7997</td>\n      <td>IGP</td>\n      <td>199.74.221.1</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>6461:5997</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n  </tbody>\n</table>\n<p>1547775 rows × 27 columns</p>\n</div>"
+     },
+     "metadata": {},
+     "execution_count": 35
+    }
+   ],
+   "source": [
+    "df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "filter_col_x = [col for col in df if col.endswith('_x')]\n",
+    "filter_col_y = [col for col in df if col.endswith('_y')]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df.loc[df['_merge']=='right_only',filter_col_x] = df.loc[df['_merge']=='right_only',filter_col_y].values"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "metadata": {},
+   "outputs": [
+    {
+     "output_type": "execute_result",
+     "data": {
+      "text/plain": [
+       "        BGP protocol_x  unix time in seconds_x Withdraw or Announce_x  \\\n",
+       "0           TABLE_DUMP            1.004140e+09                      B   \n",
+       "1           TABLE_DUMP            1.004140e+09                      B   \n",
+       "2           TABLE_DUMP            1.004140e+09                      B   \n",
+       "3           TABLE_DUMP            1.004140e+09                      B   \n",
+       "4           TABLE_DUMP            1.004140e+09                      B   \n",
+       "...                ...                     ...                    ...   \n",
+       "1547770         BGP4MP            1.004141e+09                      A   \n",
+       "1547771         BGP4MP            1.004141e+09                      A   \n",
+       "1547772         BGP4MP            1.004141e+09                      A   \n",
+       "1547773         BGP4MP            1.004141e+09                      A   \n",
+       "1547774         BGP4MP            1.004141e+09                      A   \n",
+       "\n",
+       "               PeerIP_x  PeerAS          Prefix  \\\n",
+       "0         209.244.2.115    3356       3.0.0.0/8   \n",
+       "1        204.42.253.253     267       3.0.0.0/8   \n",
+       "2          129.250.0.11    2914       3.0.0.0/8   \n",
+       "3           129.250.0.6    2914       3.0.0.0/8   \n",
+       "4          147.28.255.2    3130       3.0.0.0/8   \n",
+       "...                 ...     ...             ...   \n",
+       "1547770      157.22.9.7     715  203.157.0.0/16   \n",
+       "1547771  204.42.253.253     267  203.157.0.0/16   \n",
+       "1547772   216.220.176.1   19669  203.157.0.0/16   \n",
+       "1547773   216.220.176.1   19669  203.157.0.0/16   \n",
+       "1547774    199.74.221.1    8121  200.30.42.0/24   \n",
+       "\n",
+       "                               AS_PATH_x Origin_x      Next_Hop_x  \\\n",
+       "0                            3356 701 80      IGP   209.244.2.115   \n",
+       "1                        267 2914 701 80      IGP  204.42.253.253   \n",
+       "2                            2914 701 80      IGP    129.250.0.11   \n",
+       "3                            2914 701 80      IGP     129.250.0.6   \n",
+       "4                       3130 7018 701 80      IGP    147.28.255.2   \n",
+       "...                                  ...      ...             ...   \n",
+       "1547770         715 1239 11919 4765 9649      IGP      157.22.9.7   \n",
+       "1547771    267 2914 7018 11919 4765 9649      IGP  204.42.253.253   \n",
+       "1547772  19669 6461 7018 11919 4765 9649      IGP   216.220.176.1   \n",
+       "1547773        19669 6461 7473 4765 9649      IGP   216.220.176.1   \n",
+       "1547774        8121 6461 6453 13489 7997      IGP    199.74.221.1   \n",
+       "\n",
+       "         Local_Pref_x  ...        PeerIP_y                        AS_PATH_y  \\\n",
+       "0                 0.0  ...             NaN                              NaN   \n",
+       "1                 0.0  ...             NaN                              NaN   \n",
+       "2                 0.0  ...             NaN                              NaN   \n",
+       "3                 0.0  ...             NaN                              NaN   \n",
+       "4                 0.0  ...             NaN                              NaN   \n",
+       "...               ...  ...             ...                              ...   \n",
+       "1547770           0.0  ...      157.22.9.7         715 1239 11919 4765 9649   \n",
+       "1547771           0.0  ...  204.42.253.253    267 2914 7018 11919 4765 9649   \n",
+       "1547772           0.0  ...   216.220.176.1  19669 6461 7018 11919 4765 9649   \n",
+       "1547773           0.0  ...   216.220.176.1        19669 6461 7473 4765 9649   \n",
+       "1547774           0.0  ...    199.74.221.1        8121 6461 6453 13489 7997   \n",
+       "\n",
+       "        Origin_y      Next_Hop_y Local_Pref_y  MED_y Community_y AtomicAGG_y  \\\n",
+       "0            NaN             NaN          NaN    NaN         NaN         NaN   \n",
+       "1            NaN             NaN          NaN    NaN         NaN         NaN   \n",
+       "2            NaN             NaN          NaN    NaN         NaN         NaN   \n",
+       "3            NaN             NaN          NaN    NaN         NaN         NaN   \n",
+       "4            NaN             NaN          NaN    NaN         NaN         NaN   \n",
+       "...          ...             ...          ...    ...         ...         ...   \n",
+       "1547770      IGP      157.22.9.7          0.0    0.0         NaN         NAG   \n",
+       "1547771      IGP  204.42.253.253          0.0    0.0    267:2914         NAG   \n",
+       "1547772      IGP   216.220.176.1          0.0    0.0   6461:5997         NAG   \n",
+       "1547773      IGP   216.220.176.1          0.0    0.0   6461:5997         NAG   \n",
+       "1547774      IGP    199.74.221.1          0.0    0.0   6461:5997         NAG   \n",
+       "\n",
+       "        AGGREGATOR_y      _merge  \n",
+       "0                NaN   left_only  \n",
+       "1                NaN   left_only  \n",
+       "2                NaN   left_only  \n",
+       "3                NaN   left_only  \n",
+       "4                NaN   left_only  \n",
+       "...              ...         ...  \n",
+       "1547770          NaN  right_only  \n",
+       "1547771          NaN  right_only  \n",
+       "1547772          NaN  right_only  \n",
+       "1547773          NaN  right_only  \n",
+       "1547774          NaN  right_only  \n",
+       "\n",
+       "[1547775 rows x 27 columns]"
+      ],
+      "text/html": "<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>BGP protocol_x</th>\n      <th>unix time in seconds_x</th>\n      <th>Withdraw or Announce_x</th>\n      <th>PeerIP_x</th>\n      <th>PeerAS</th>\n      <th>Prefix</th>\n      <th>AS_PATH_x</th>\n      <th>Origin_x</th>\n      <th>Next_Hop_x</th>\n      <th>Local_Pref_x</th>\n      <th>...</th>\n      <th>PeerIP_y</th>\n      <th>AS_PATH_y</th>\n      <th>Origin_y</th>\n      <th>Next_Hop_y</th>\n      <th>Local_Pref_y</th>\n      <th>MED_y</th>\n      <th>Community_y</th>\n      <th>AtomicAGG_y</th>\n      <th>AGGREGATOR_y</th>\n      <th>_merge</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>209.244.2.115</td>\n      <td>3356</td>\n      <td>3.0.0.0/8</td>\n      <td>3356 701 80</td>\n      <td>IGP</td>\n      <td>209.244.2.115</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>204.42.253.253</td>\n      <td>267</td>\n      <td>3.0.0.0/8</td>\n      <td>267 2914 701 80</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.11</td>\n      <td>2914</td>\n      <td>3.0.0.0/8</td>\n      <td>2914 701 80</td>\n      <td>IGP</td>\n      <td>129.250.0.11</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.6</td>\n      <td>2914</td>\n      <td>3.0.0.0/8</td>\n      <td>2914 701 80</td>\n      <td>IGP</td>\n      <td>129.250.0.6</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>147.28.255.2</td>\n      <td>3130</td>\n      <td>3.0.0.0/8</td>\n      <td>3130 7018 701 80</td>\n      <td>IGP</td>\n      <td>147.28.255.2</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>...</th>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n    </tr>\n    <tr>\n      <th>1547770</th>\n      <td>BGP4MP</td>\n      <td>1.004141e+09</td>\n      <td>A</td>\n      <td>157.22.9.7</td>\n      <td>715</td>\n      <td>203.157.0.0/16</td>\n      <td>715 1239 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>157.22.9.7</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>157.22.9.7</td>\n      <td>715 1239 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>157.22.9.7</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>NaN</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547771</th>\n      <td>BGP4MP</td>\n      <td>1.004141e+09</td>\n      <td>A</td>\n      <td>204.42.253.253</td>\n      <td>267</td>\n      <td>203.157.0.0/16</td>\n      <td>267 2914 7018 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>204.42.253.253</td>\n      <td>267 2914 7018 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>267:2914</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547772</th>\n      <td>BGP4MP</td>\n      <td>1.004141e+09</td>\n      <td>A</td>\n      <td>216.220.176.1</td>\n      <td>19669</td>\n      <td>203.157.0.0/16</td>\n      <td>19669 6461 7018 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>216.220.176.1</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>216.220.176.1</td>\n      <td>19669 6461 7018 11919 4765 9649</td>\n      <td>IGP</td>\n      <td>216.220.176.1</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>6461:5997</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547773</th>\n      <td>BGP4MP</td>\n      <td>1.004141e+09</td>\n      <td>A</td>\n      <td>216.220.176.1</td>\n      <td>19669</td>\n      <td>203.157.0.0/16</td>\n      <td>19669 6461 7473 4765 9649</td>\n      <td>IGP</td>\n      <td>216.220.176.1</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>216.220.176.1</td>\n      <td>19669 6461 7473 4765 9649</td>\n      <td>IGP</td>\n      <td>216.220.176.1</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>6461:5997</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n    <tr>\n      <th>1547774</th>\n      <td>BGP4MP</td>\n      <td>1.004141e+09</td>\n      <td>A</td>\n      <td>199.74.221.1</td>\n      <td>8121</td>\n      <td>200.30.42.0/24</td>\n      <td>8121 6461 6453 13489 7997</td>\n      <td>IGP</td>\n      <td>199.74.221.1</td>\n      <td>0.0</td>\n      <td>...</td>\n      <td>199.74.221.1</td>\n      <td>8121 6461 6453 13489 7997</td>\n      <td>IGP</td>\n      <td>199.74.221.1</td>\n      <td>0.0</td>\n      <td>0.0</td>\n      <td>6461:5997</td>\n      <td>NAG</td>\n      <td>NaN</td>\n      <td>right_only</td>\n    </tr>\n  </tbody>\n</table>\n<p>1547775 rows × 27 columns</p>\n</div>"
+     },
+     "metadata": {},
+     "execution_count": 39
+    }
+   ],
+   "source": [
+    "df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dump_path = '/home/jake/Documents/Coding/data-pipeline/pipeline/data/bgp_tmp'\n",
+    "df.to_csv(dump_path+'/'+'output.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "path = '/home/jake/Documents/Coding/data-pipeline/pipeline/data/bgp_tmp/output.csv'\n",
+    "check = pd.read_csv(path, sep=',')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "metadata": {},
+   "outputs": [
+    {
+     "output_type": "execute_result",
+     "data": {
+      "text/plain": [
+       "         Unnamed: 0 BGP protocol_x  unix time in seconds_x  \\\n",
+       "0                 0     TABLE_DUMP            1.004140e+09   \n",
+       "1                 1     TABLE_DUMP            1.004140e+09   \n",
+       "2                 2     TABLE_DUMP            1.004140e+09   \n",
+       "3                 3     TABLE_DUMP            1.004140e+09   \n",
+       "4                 4     TABLE_DUMP            1.004140e+09   \n",
+       "...             ...            ...                     ...   \n",
+       "1526196     1526196     TABLE_DUMP            1.004140e+09   \n",
+       "1526197     1526197     TABLE_DUMP            1.004140e+09   \n",
+       "1526198     1526198     TABLE_DUMP            1.004140e+09   \n",
+       "1526199     1526199     TABLE_DUMP            1.004140e+09   \n",
+       "1526200     1526200     TABLE_DUMP            1.004140e+09   \n",
+       "\n",
+       "        Withdraw or Announce_x        PeerIP_x  PeerAS            Prefix  \\\n",
+       "0                            B   209.244.2.115    3356         3.0.0.0/8   \n",
+       "1                            B  204.42.253.253     267         3.0.0.0/8   \n",
+       "2                            B    129.250.0.11    2914         3.0.0.0/8   \n",
+       "3                            B     129.250.0.6    2914         3.0.0.0/8   \n",
+       "4                            B    147.28.255.2    3130         3.0.0.0/8   \n",
+       "...                        ...             ...     ...               ...   \n",
+       "1526196                      B     129.250.0.6    2914  218.184.192.0/18   \n",
+       "1526197                      B  204.42.253.253     267  218.184.192.0/18   \n",
+       "1526198                      B  144.228.241.81    1239  218.184.192.0/18   \n",
+       "1526199                      B    199.74.221.1    8121  218.184.192.0/18   \n",
+       "1526200                      B     167.142.3.6    5056  218.184.192.0/18   \n",
+       "\n",
+       "                       AS_PATH_x Origin_x      Next_Hop_x  ...  PeerIP_y  \\\n",
+       "0                    3356 701 80      IGP   209.244.2.115  ...       NaN   \n",
+       "1                267 2914 701 80      IGP  204.42.253.253  ...       NaN   \n",
+       "2                    2914 701 80      IGP    129.250.0.11  ...       NaN   \n",
+       "3                    2914 701 80      IGP     129.250.0.6  ...       NaN   \n",
+       "4               3130 7018 701 80      IGP    147.28.255.2  ...       NaN   \n",
+       "...                          ...      ...             ...  ...       ...   \n",
+       "1526196      2914 6461 9902 9415      IGP     129.250.0.6  ...       NaN   \n",
+       "1526197  267 2914 6453 9505 9415      IGP  204.42.253.253  ...       NaN   \n",
+       "1526198      1239 6461 9902 9415      IGP  144.228.241.81  ...       NaN   \n",
+       "1526199      8121 6461 9902 9415      IGP    199.74.221.1  ...       NaN   \n",
+       "1526200  5056 701 6461 9902 9415      IGP     167.142.3.6  ...       NaN   \n",
+       "\n",
+       "         AS_PATH_y Origin_y Next_Hop_y Local_Pref_y  MED_y  Community_y  \\\n",
+       "0              NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "1              NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "2              NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "3              NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "4              NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "...            ...      ...        ...          ...    ...          ...   \n",
+       "1526196        NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "1526197        NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "1526198        NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "1526199        NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "1526200        NaN      NaN        NaN          NaN    NaN          NaN   \n",
+       "\n",
+       "         AtomicAGG_y  AGGREGATOR_y     _merge  \n",
+       "0                NaN           NaN  left_only  \n",
+       "1                NaN           NaN  left_only  \n",
+       "2                NaN           NaN  left_only  \n",
+       "3                NaN           NaN  left_only  \n",
+       "4                NaN           NaN  left_only  \n",
+       "...              ...           ...        ...  \n",
+       "1526196          NaN           NaN  left_only  \n",
+       "1526197          NaN           NaN  left_only  \n",
+       "1526198          NaN           NaN  left_only  \n",
+       "1526199          NaN           NaN  left_only  \n",
+       "1526200          NaN           NaN  left_only  \n",
+       "\n",
+       "[1526201 rows x 28 columns]"
+      ],
+      "text/html": "<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>Unnamed: 0</th>\n      <th>BGP protocol_x</th>\n      <th>unix time in seconds_x</th>\n      <th>Withdraw or Announce_x</th>\n      <th>PeerIP_x</th>\n      <th>PeerAS</th>\n      <th>Prefix</th>\n      <th>AS_PATH_x</th>\n      <th>Origin_x</th>\n      <th>Next_Hop_x</th>\n      <th>...</th>\n      <th>PeerIP_y</th>\n      <th>AS_PATH_y</th>\n      <th>Origin_y</th>\n      <th>Next_Hop_y</th>\n      <th>Local_Pref_y</th>\n      <th>MED_y</th>\n      <th>Community_y</th>\n      <th>AtomicAGG_y</th>\n      <th>AGGREGATOR_y</th>\n      <th>_merge</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>0</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>209.244.2.115</td>\n      <td>3356</td>\n      <td>3.0.0.0/8</td>\n      <td>3356 701 80</td>\n      <td>IGP</td>\n      <td>209.244.2.115</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>1</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>204.42.253.253</td>\n      <td>267</td>\n      <td>3.0.0.0/8</td>\n      <td>267 2914 701 80</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>2</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.11</td>\n      <td>2914</td>\n      <td>3.0.0.0/8</td>\n      <td>2914 701 80</td>\n      <td>IGP</td>\n      <td>129.250.0.11</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>3</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.6</td>\n      <td>2914</td>\n      <td>3.0.0.0/8</td>\n      <td>2914 701 80</td>\n      <td>IGP</td>\n      <td>129.250.0.6</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>4</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>147.28.255.2</td>\n      <td>3130</td>\n      <td>3.0.0.0/8</td>\n      <td>3130 7018 701 80</td>\n      <td>IGP</td>\n      <td>147.28.255.2</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>...</th>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n      <td>...</td>\n    </tr>\n    <tr>\n      <th>1526196</th>\n      <td>1526196</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>129.250.0.6</td>\n      <td>2914</td>\n      <td>218.184.192.0/18</td>\n      <td>2914 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>129.250.0.6</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>1526197</th>\n      <td>1526197</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>204.42.253.253</td>\n      <td>267</td>\n      <td>218.184.192.0/18</td>\n      <td>267 2914 6453 9505 9415</td>\n      <td>IGP</td>\n      <td>204.42.253.253</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>1526198</th>\n      <td>1526198</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>144.228.241.81</td>\n      <td>1239</td>\n      <td>218.184.192.0/18</td>\n      <td>1239 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>144.228.241.81</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>1526199</th>\n      <td>1526199</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>199.74.221.1</td>\n      <td>8121</td>\n      <td>218.184.192.0/18</td>\n      <td>8121 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>199.74.221.1</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n    <tr>\n      <th>1526200</th>\n      <td>1526200</td>\n      <td>TABLE_DUMP</td>\n      <td>1.004140e+09</td>\n      <td>B</td>\n      <td>167.142.3.6</td>\n      <td>5056</td>\n      <td>218.184.192.0/18</td>\n      <td>5056 701 6461 9902 9415</td>\n      <td>IGP</td>\n      <td>167.142.3.6</td>\n      <td>...</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>NaN</td>\n      <td>left_only</td>\n    </tr>\n  </tbody>\n</table>\n<p>1526201 rows × 28 columns</p>\n</div>"
+     },
+     "metadata": {},
+     "execution_count": 45
+    }
+   ],
+   "source": [
+    "check"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ]
+}

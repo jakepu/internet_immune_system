@@ -1,0 +1,6 @@
+pipeline/data/bgp_tmp/*
+pipeline/data/bgpdata/*
+pipeline/src/.ipynb_checkpoints
+.ipynb_checkpoints
+.vscode
+**__pycache__**
