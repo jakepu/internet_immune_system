@@ -1,13 +1,10 @@
 class ParsedObj:
 
-    def __init__(self):
+    def __init__(self, timestamp, label, data):
         # Example attributes
 
         # timestamp is a datatime object
-        self.timestamp = None
+        self.timestamp = timestamp
 
-        # TCP/IP layer attributes
-        self.src_ip = None
-        self.src_port = None
-        self.dst_ip = None
-        self.dst_port = None
+        self.data = data
+        self.label = label
