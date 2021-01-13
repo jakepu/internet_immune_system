@@ -4,7 +4,7 @@ import re
 
 class Prefix:
     regex_IP = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
-    def __init__(self, prefix, prefix_length = None):
+    def __init__(self, prefix, prefix_length = None, host_list = None):
         # only one param is passed, prefix is like "192.168.0.0/16"
         if prefix_length == None:
             try:
@@ -23,6 +23,7 @@ class Prefix:
             raise ValueError('prefix does not fit IPv4 format')
         self.binary = Prefix.ip_to_binary(self.str)
         self.int = int(self.binary,2)
+        self.host_list = host_list
     def ip_to_binary(ip_address):
         octet_list_int = ip_address.split(".")
         octet_list_bin = [format(int(i), '08b') for i in octet_list_int]
@@ -38,4 +39,4 @@ class Prefix:
         #Get the network ID of both prefix and ip based net size
         prefix_network = Prefix.get_addr_network(self.str, self.prefix_len)
         ip_network = Prefix.get_addr_network(ip_address, self.prefix_len)
-        return ip_network == prefix_network
+        return (ip_network == prefix_network, self.prefix_len)
