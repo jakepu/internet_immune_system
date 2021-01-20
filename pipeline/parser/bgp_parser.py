@@ -5,27 +5,30 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 import numpy as np
-from bgp_collector import BGP_Collector
-from parsed_obj import ParsedObj
+from ..collector.bgp_collector import BGPCollector
+from ..data_structure.parsed_obj import ParsedObj
 from multiprocessing import Pool
-class BGP_Parser:
+from .base_parser import BaseParser
+class BGPParser(BaseParser):
 
-    def __init__(self, collector = None): # actual deployment: collector = BGP_Collector()
+    def __init__(self): # actual deployment: collector = BGPCollector()
         # self._data_src = collector.local_path
-        self._data_src = os.path.dirname(os.path.realpath(__file__)) + '/../../../data/bgpdata'
-        self._dump_exec_path = os.path.dirname(os.path.realpath(__file__)) + '/bgpdump/bgpdump'
+        self.collector = BGPCollector()
+        self._data_src = self.collector.local_path
+        self._dump_exec_path = os.path.dirname(os.path.realpath(__file__)) + '/../externals/bgpdump/bgpdump'
         self._dump_exec_path = os.path.realpath(self._dump_exec_path)
         self._dump_path = os.path.realpath(self._data_src + '/../bgp_tmp/')
-        self.collector = collector
         self._names =['BGP protocol','unix time in seconds','Withdraw or Announce','PeerIP','PeerAS','Prefix','AS_PATH','Origin','Next_Hop','Local_Pref','MED','Community','AtomicAGG','AGGREGATOR']
         self._delta_cap = timedelta(hours=2) # rib interval = 2 hours
         self._last_update_time = None
         self._last_update_filename = ''
+        self.start_time = None
     def get_data(self, start_time = None):
         if start_time is None:
-            self.get_update()
+            return self.get_update()
         else:
-            self.get_rib(start_time)
+            self.start_time = start_time
+            return self.get_rib(start_time)
     def get_rib(self, start_time):
         """ Returns the most recent parsed object """
         #self.collector._check_new_update()
@@ -132,13 +135,6 @@ class BGP_Parser:
         hour_str = filename.split('.')[2]
         return datetime(year=int(date_str[0:4]),month=int(date_str[4:6]), day=int(date_str[6:8]),
                                         hour=int(hour_str[0:2]), minute=int(hour_str[2:4]),tzinfo=timezone.utc)
-    def flush_data(self):
-        """
-        This function is called when the Synchronizer determines that
-        this parser has the most recent parsed object and send it downstream.
-        Therefore, the local copy of the parsed object is invalidated.
-        """
-        self._parsed = None
 
 if __name__ == '__main__':
-    print(BGP_Parser()._read_rib_from_file(datetime(2020,9,26,23,50,tzinfo=timezone.utc))[1])
+    print(BGPParser()._read_rib_from_file(datetime(2020,9,26,23,50,tzinfo=timezone.utc))[1])

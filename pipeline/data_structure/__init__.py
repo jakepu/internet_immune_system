@@ -1,1 +1,1 @@
-__all__ = ["as", "host", "internet", "parsed_obj", "prefix", "router"]
+__all__ = ["autonomous_system", "host", "internet", "parsed_obj", "prefix", "router"]

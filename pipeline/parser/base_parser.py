@@ -1,4 +1,4 @@
-class Parser:
+class BaseParser:
 
     def __init__(self, data_src):
         self._parsed = None
