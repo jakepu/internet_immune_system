@@ -1,10 +1,11 @@
-class BaseParser:
+from abc import ABC, abstractmethod
+class BaseParser(ABC):
 
-    def __init__(self, data_src):
+    def __init__(self):
         self._parsed = None
-        self._data_src = data_src
 
-    def get_data(self):
+    @abstractmethod
+    def get_data(self, start_time = None):
         """ Returns the most recent parsed object """
         if not self._parsed:
             # Need to read and parse data from file
@@ -14,12 +15,11 @@ class BaseParser:
         print('parser ' + self._data_src +' now has ' + str(self._parsed.timestamp))
         return self._parsed
 
+    @abstractmethod
     def _parse(self, raw_data):
         """ This call parse the raw_data into a parsed object """
-        raise NotImplementedError
-
-    def _read_data_from_file(self):
-        raise NotImplementedError
+        # raise NotImplementedError
+        pass
 
     def flush_data(self):
         """

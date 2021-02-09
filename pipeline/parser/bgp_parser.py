@@ -18,6 +18,8 @@ class BGPParser(BaseParser):
         self._dump_exec_path = os.path.dirname(os.path.realpath(__file__)) + '/../externals/bgpdump/bgpdump'
         self._dump_exec_path = os.path.realpath(self._dump_exec_path)
         self._dump_path = os.path.realpath(self._data_src + '/../bgp_tmp/')
+        if not os.path.exists(self._dump_path):
+            os.makedirs(self._dump_path)
         self._names =['BGP protocol','unix time in seconds','Withdraw or Announce','PeerIP','PeerAS','Prefix','AS_PATH','Origin','Next_Hop','Local_Pref','MED','Community','AtomicAGG','AGGREGATOR']
         self._delta_cap = timedelta(hours=2) # rib interval = 2 hours
         self._last_update_time = None
@@ -28,8 +30,8 @@ class BGPParser(BaseParser):
             return self.get_update()
         else:
             self.start_time = start_time
-            return self.get_rib(start_time)
-    def get_rib(self, start_time):
+            return self._get_rib(start_time)
+    def _get_rib(self, start_time):
         """ Returns the most recent parsed object """
         #self.collector._check_new_update()
         if start_time <= datetime(2003,2,3,19,32,tzinfo=timezone.utc):
@@ -41,8 +43,7 @@ class BGPParser(BaseParser):
         return self._parse(df)
     def get_update(self):
         if self._last_update_time is None:
-            print("cannot find update")
-            return None
+            raise RuntimeError("Have not set start time for BGP parser")
         flag = False
         dir_name = self._data_src + '/{}.{}/UPDATES/'.format(self._last_update_time.year, self._last_update_time.month)
         for update_filename in sorted(os.listdir(dir_name)): # update_filename : updates.20200901.0000.bz2
@@ -89,46 +90,57 @@ class BGPParser(BaseParser):
         state = False
         rib_filename_list = sorted(os.listdir(dir_name))
         rib_filename_list = tuple(filter(lambda rib_filename: rib_filename.endswith('.bz2'), rib_filename_list))
-        for rib_filename in rib_filename_list: # rib_filename : rib.20200901.0000.bz2
+        if start_time < self._filename_to_dt(rib_filename_list[0]):
+            # if oldest rib in this month is older than the start_time, use the newest rib file from last month
+            one_day_before = start_time - timedelta(days=1)
+            dir_name = self._data_src + '/{}.{}/RIBS/'.format(one_day_before.year, one_day_before.month)
+            rib_filename_list = sorted(os.listdir(dir_name))
+            rib_filename_list = tuple(filter(lambda rib_filename: rib_filename.endswith('.bz2'), rib_filename_list))
+            rib_filename = rib_filename_list[-1]
             rib_timestamp = self._filename_to_dt(rib_filename)
-            if start_time - rib_timestamp < self._delta_cap and start_time - rib_timestamp >= timedelta(hours=0):
-                rib_csv_path = self._dump_path+'/'+rib_filename+'.csv'
-                f = open(rib_csv_path,'w+')
-                subprocess.check_call([self._dump_exec_path, '-m', '-u', dir_name+'/'+rib_filename], stdout=f)
+            update_dir_name = self._data_src + '/{}.{}/UPDATES/'.format(one_day_before.year, one_day_before.month)
+        else:
+            for rib_filename in rib_filename_list: # rib_filename : rib.20200901.0000.bz2
+                rib_timestamp = self._filename_to_dt(rib_filename)
+                if start_time - rib_timestamp < self._delta_cap and start_time - rib_timestamp >= timedelta(hours=0):
+                    break
+            update_dir_name = self._data_src + '/{}.{}/UPDATES/'.format(start_time.year, start_time.month)
+        rib_csv_path = self._dump_path+'/'+rib_filename+'.csv'
+        f = open(rib_csv_path,'w')
+        subprocess.check_call([self._dump_exec_path, '-m', '-u', dir_name+'/'+rib_filename], stdout=f)
+        f.close()
+        df = pd.read_csv(rib_csv_path, sep='|', names = self._names, header = None, usecols =range(len(self._names)), dtype={'unix time in seconds':'float64'})
+        for update_filename in sorted(os.listdir(update_dir_name)): # update_filename : updates.20200901.0000.bz2
+            update_timestamp = self._filename_to_dt(update_filename)
+            if update_timestamp >= rib_timestamp and update_timestamp < start_time:
+                state = True
+                update_csv_path = self._dump_path+'/'+update_filename+'.csv'
+                f = open(update_csv_path,'w')
+                subprocess.check_call([self._dump_exec_path, '-m', '-u', update_dir_name+'/'+update_filename], stdout=f)
                 f.close()
-                df = pd.read_csv(rib_csv_path, sep='|', names = self._names, header = None, usecols =range(len(self._names)), dtype={'unix time in seconds':'float64'})
-                dir_name = self._data_src + '/{}.{}/UPDATES/'.format(start_time.year, start_time.month)
-                for update_filename in sorted(os.listdir(dir_name)): # update_filename : updates.20200901.0000.bz2
-                    update_timestamp = self._filename_to_dt(update_filename)
-                    if update_timestamp >= rib_timestamp and update_timestamp < start_time:
-                        state = True
-                        update_csv_path = self._dump_path+'/'+update_filename+'.csv'
-                        f = open(update_csv_path,'w')
-                        subprocess.check_call([self._dump_exec_path, '-m', '-u', dir_name+'/'+update_filename], stdout=f)
-                        f.close()
-                        df_update = pd.read_csv(update_csv_path, sep='|', names = self._names, header = None, usecols =range(len(self._names)),dtype={'unix time in seconds':'float64'})
-                        df_update = df_update[df_update['unix time in seconds'] <= start_time.timestamp()]
-                        df = df.merge(df_update, on=('PeerAS','Prefix'), how='outer',indicator=True)
-                        filter_col_x = [col for col in df if col.endswith('_x')]
-                        filter_col_y = [col for col in df if col.endswith('_y')]
-                        df.loc[df['_merge']=='right_only',filter_col_x] = df.loc[df['_merge']=='right_only',filter_col_y].values
-                        #df.to_csv(self._dump_path+'/'+'output.csv')
-                        df = df.drop(filter_col_y, axis=1)
-                        df = df.drop('_merge', axis=1)
-                        col_names = [col for col in df]
-                        for i in range(len(col_names)):
-                            if col_names[i].endswith('_x'):
-                                col_names[i] = col_names[i][:-2]
-                        df.columns = col_names
-                        subprocess.check_call(['rm', '-f', update_csv_path])
-                    else:
-                        state = False
-                    if last_state == True and state == False:
-                        subprocess.check_call(['rm', '-f', rib_csv_path])
-                        df.loc[:,'Withdraw or Announce'] = 'B'
-                        return df, update_filename
-                    last_state = state
+                df_update = pd.read_csv(update_csv_path, sep='|', names = self._names, header = None, usecols =range(len(self._names)),dtype={'unix time in seconds':'float64'})
+                df_update = df_update[df_update['unix time in seconds'] <= start_time.timestamp()]
+                df = df.merge(df_update, on=('PeerAS','Prefix'), how='outer',indicator=True)
+                filter_col_x = [col for col in df if col.endswith('_x')]
+                filter_col_y = [col for col in df if col.endswith('_y')]
+                df.loc[df['_merge']=='right_only',filter_col_x] = df.loc[df['_merge']=='right_only',filter_col_y].values
+                #df.to_csv(self._dump_path+'/'+'output.csv')
+                df = df.drop(filter_col_y, axis=1)
+                df = df.drop('_merge', axis=1)
+                col_names = [col for col in df]
+                for i in range(len(col_names)):
+                    if col_names[i].endswith('_x'):
+                        col_names[i] = col_names[i][:-2]
+                df.columns = col_names
+                subprocess.check_call(['rm', '-f', update_csv_path])
+            else:
+                state = False
+            if last_state == True and state == False:
                 subprocess.check_call(['rm', '-f', rib_csv_path])
+                df.loc[:,'Withdraw or Announce'] = 'B'
+                return df, update_filename
+            last_state = state
+        subprocess.check_call(['rm', '-f', rib_csv_path])
         return None, ''
     def _filename_to_dt(self, filename):
         date_str = filename.split('.')[1] 
