@@ -15,7 +15,7 @@ class Synchronizer:
 
     def get_next_most_recent(self):
         """ Return the most recent parsed object among all parsers  """
-        parsed_objs = [(p, p.get_update()) for p in self._parsers]
+        parsed_objs = [(p, p.get_data()) for p in self._parsers]
 
         eof_parsers = [p[0] for p in parsed_objs if p[1] is None]
         # Unregister the parsers that have no more data
