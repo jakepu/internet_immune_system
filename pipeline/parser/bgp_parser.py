@@ -120,7 +120,7 @@ class BGPParser(BaseParser):
         subprocess.check_call([self._dump_exec_path, '-m', '-u', update_filename], stdout=f)
         f.close()
         self._update_csv_f = open(update_csv_path, 'r', newline='')
-        self._update_reader = csv.DictReader(update_csv_f, fieldnames=self._names, delimiter='|')
+        self._update_reader = csv.DictReader(self._update_csv_f, fieldnames=self._names, delimiter='|')
     def _read_rib_from_file(self, start_time):
         if start_time <= datetime(2003,2,3,19,32,tzinfo=timezone.utc):
             raise LookupError('Data before 2003/02/03 19:32 UTC is in Pacific Time, algorithm not implemented for tricky data')
@@ -199,9 +199,9 @@ class BGPParser(BaseParser):
             row = next(update_reader,default=None)
         # all rows in this update are applied, remove this csv
         update_csv_f.close()
-        os.romove(update_csv_f.name)
+        os.remove(update_csv_f.name)
         # subprocess.check_call(['rm', '-f', update_csv_path])
         return rib_rows
 
 if __name__ == '__main__':
-    print(BGPParser()._read_rib_from_file(datetime(2020,9,26,23,50,tzinfo=timezone.utc))[1])
+    pass
