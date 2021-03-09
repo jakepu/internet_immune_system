@@ -33,7 +33,7 @@ class BGPParser(BaseParser):
         self._curr_update_csv_f = None
         self._curr_update_reader = None
         self._rib = []
-    def get_update(self):
+    def get_data(self):
         """ Return None if there is no update """
         if self.start_time is None:
             raise RuntimeError('BGP parser is not initialized yet')
@@ -49,7 +49,7 @@ class BGPParser(BaseParser):
             if self._get_update() == -1:
                 # no more updates available
                 return None
-            return self.get_update()
+            return self.get_data()
         else:
             # self._curr_update_reader is not None
             # snapshot exhausted, return next row in update
@@ -60,12 +60,12 @@ class BGPParser(BaseParser):
                 os.remove(self._curr_update_csv_f.name)
                 self._curr_update_csv_f = None
                 self._curr_update_reader = None
-                return self.get_update()
+                return self.get_data()
             else:
                 # current update has more rows
                 self._parsed_obj = ParsedObj(timestamp = row['unix time in seconds'], label='bgp', data = row)
         return self._parsed_obj
-    def initialize(self, start_time):
+    def set_start_time(self, start_time):
         self._get_rib(start_time)
         
     def _get_rib(self, start_time):

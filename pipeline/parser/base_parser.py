@@ -5,7 +5,7 @@ class BaseParser(ABC):
         self._parsed = None
 
     @abstractmethod
-    def get_update(self, start_time = None):
+    def get_data(self, start_time = None):
         """ Returns the most recent parsed object """
         if not self._parsed:
             # Need to read and parse data from file
@@ -16,7 +16,7 @@ class BaseParser(ABC):
         return self._parsed
 
     @abstractmethod
-    def initialize(self, start_time):
+    def set_start_time(self, start_time):
         """ Set up the start_time in parser so do data preprocessing """
         pass
 
