@@ -26,6 +26,9 @@ class Internet:
         host = Host(parsedObj.data["ip_addr"], None, None, parsedObj.timestamp)
         self.AS_set[0].routers[0].prefix_set[0].append_host(host)
         
+    def build_structure_geolocation(self, parsedObj):
+        self.geoDict = Geolocation(parsedObj = parsedObj)
+
     # def count_hosts(self):
     #     prefixes = self.get_prefix_set()
     #     count = 0
