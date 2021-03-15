@@ -1,4 +1,4 @@
-from .data_structure import *
+# from data_structure import *
 import datetime
 import numpy as np
 
@@ -10,7 +10,7 @@ class Synchronizer:
         self._set_start_time_in_parsers(start_time)
         self.internet = None
         print('Initializing skeleton Internet')
-        self._build_sleleton_Internet()
+        # self._build_sleleton_Internet()
         self.count = 0
 
     def get_next_most_recent(self):
@@ -47,17 +47,17 @@ class Synchronizer:
         """Update the data structure given the update"""
         self.internet.build_structure(update)
 
-    def _build_sleleton_Internet(self):
-        """This function is misplaced. It should be in the data structure"""
-        host = Host(None, None, None, None)
-        Host_list = np.array([host], dtype = object)
-        prefix = Prefix(None,Host_list)
-        Prefix_list = np.array([prefix], dtype = object)
-        router = Routers(Prefix_list)
-        Router_list = np.array([router], dtype = object)
-        as_system = AS(None,None,Router_list, None,)
-        AS_list = np.array([as_system], dtype = object)
-        self.internet = Internet(datetime.datetime.now(), AS_list,)
+    # def _build_sleleton_Internet(self):
+    #     """This function is misplaced. It should be in the data structure"""
+    #     host = Host(None, None, None, None)
+    #     Host_list = np.array([host], dtype = object)
+    #     prefix = Prefix(None,Host_list)
+    #     Prefix_list = np.array([prefix], dtype = object)
+    #     router = Routers(Prefix_list)
+    #     Router_list = np.array([router], dtype = object)
+    #     as_system = AS(None,None,Router_list, None,)
+    #     AS_list = np.array([as_system], dtype = object)
+    #     self.internet = Internet(datetime.datetime.now(), AS_list,)
 
     def _unregister_parser(self, parser):
         print("Removing parser: " + parser._data_src)
