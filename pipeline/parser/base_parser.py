@@ -26,7 +26,7 @@ class BaseParser(ABC):
         this parser has the most recent parsed object and send it downstream.
         Therefore, the local copy of the parsed object is invalidated.
         """
-        self._parsed = None
+        self._parsed_obj = None
 """
 We can use private methods in the subclass parser to
 deal with specific data but remember to put a leading underscore(_) 
