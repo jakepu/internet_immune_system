@@ -10,3 +10,5 @@ class Router:
         self.ip = ip
         self.AS = AS
         self.count = {}
+        self.announce_time = []
+        self.withdraw_time = []

@@ -43,7 +43,7 @@ class BGPParser(BaseParser):
         if len(self._rib) != 0:
             # snapshot output
             row = self._rib.pop()
-            self._parsed_obj = ParsedObj(timestamp = row['unix time in seconds'], label='bgp', data = row)
+            self._parsed_obj = ParsedObj(timestamp = float(row['unix time in seconds']), label='bgp', data = row)
         elif self._curr_update_reader is None:
             # snapshot exhausted, have not loaded new update
             if self._get_update() == -1:
@@ -63,7 +63,7 @@ class BGPParser(BaseParser):
                 return self.get_data()
             else:
                 # current update has more rows
-                self._parsed_obj = ParsedObj(timestamp = row['unix time in seconds'], label='bgp', data = row)
+                self._parsed_obj = ParsedObj(timestamp = float(row['unix time in seconds']), label='bgp', data = row)
         return self._parsed_obj
     def set_start_time(self, start_time):
         self._get_rib(start_time)
@@ -117,11 +117,10 @@ class BGPParser(BaseParser):
         changed class variable: self._curr_update_csv_f, self._curr_update_reader,
         """
         update_csv_path = self._dump_path+'/'+update_filename+'.csv'
-        f = open(update_csv_path,'w')
-        subprocess.check_call([self._dump_exec_path, '-m', '-u', update_filename], stdout=f)
-        f.close()
-        self._update_csv_f = open(update_csv_path, 'r', newline='')
-        self._update_reader = csv.DictReader(self._update_csv_f, fieldnames=self._names, delimiter='|')
+        dir_name = self._data_src + '/{}.{:02}/UPDATES/'.format(int(update_filename[8:12]), int(update_filename[12:14]))
+        subprocess.check_call([self._dump_exec_path, '-m', '-u', '-O', update_csv_path, dir_name+update_filename])
+        self._curr_update_csv_f = open(update_csv_path, 'r', newline='')
+        self._curr_update_reader = csv.DictReader(self._curr_update_csv_f, fieldnames=self._names, delimiter='|')
     def _read_rib_from_file(self, start_time):
         if start_time <= datetime(2003,2,3,19,32,tzinfo=timezone.utc):
             raise LookupError('Data before 2003/02/03 19:32 UTC is in Pacific Time, algorithm not implemented for tricky data')
@@ -145,9 +144,7 @@ class BGPParser(BaseParser):
                     break
             update_dir_name = self._data_src + '/{}.{:02}/UPDATES/'.format(start_time.year, start_time.month)
         rib_csv_path = self._dump_path+'/'+rib_filename+'.csv'
-        f = open(rib_csv_path,'w')
-        subprocess.check_call([self._dump_exec_path, '-m', '-u', dir_name+'/'+rib_filename], stdout=f)
-        f.close()
+        subprocess.check_call([self._dump_exec_path, '-m', '-u', '-O', rib_csv_path, dir_name+'/'+rib_filename])
         rib_rows = {}
         with open(rib_csv_path, 'r', newline='') as rib_csv:
             rib_reader = csv.DictReader(rib_csv, delimiter='|', fieldnames=self._names)

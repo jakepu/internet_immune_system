@@ -2,7 +2,9 @@ import numpy as np
 import re
 # to-do: need to check regex_DNS and regex_IP
 
-
+class Hosts:
+    def __init__(self):
+        self.dict = {}
 class Host:
     regex_DNS = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
     regex_IP = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
