@@ -3,7 +3,7 @@ from parser.bgp_parser import BGPParser
 from datetime import datetime
 from datetime import timezone
 from synchronizer import Synchronizer
-from internet import Internet
+from data_structure.internet import Internet
 
 # BGPCollector(dry_run=True)
 parsers = [BGPParser(dry_run=True)]
