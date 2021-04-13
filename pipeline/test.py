@@ -17,6 +17,8 @@ while (curr_time < end_time):
     curr_time = update.timestamp
     testing.build_structure(update)
 end_time = datetime(year=2003, month=4, day=3, hour=2, tzinfo=timezone.utc)
-print('AS activity', testing.get_AS_activity(15290, start_time, end_time))
-print('Get leaking ASs', testing.get_leaking_ASs(start_time, end_time))
-print('Hijacked prefix', testing.get_hijacked_prefix(start_time, end_time))
+# print('AS activity', testing.get_AS_activity(15290, start_time, end_time))
+# print('Get leaking ASs', testing.get_leaking_ASs(start_time, end_time))
+# print('Hijacked prefix', testing.get_hijacked_prefix(start_time, end_time))
+print('get_unstable_prefix', testing.get_unstable_prefix(start_time, end_time))
+testing.close()

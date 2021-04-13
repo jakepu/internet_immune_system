@@ -5,10 +5,10 @@ class Prefixes:
     def __init__(self):
         self.dict = {}
 class Prefix:
-    def __init__(self, prefix, host_set=None, broadcast_router_set=None):
+    def __init__(self, host_set=None, broadcast_router_set=None, origin_set=None):
         self.host_set = host_set if host_set else set()
-        self.prefix = prefix
         self.broadcast_router_set = broadcast_router_set if broadcast_router_set else set()
+        self.origin_set = origin_set if origin_set else set()
         
 
 

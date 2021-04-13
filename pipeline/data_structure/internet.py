@@ -8,6 +8,8 @@ from data_structure.prefix import Prefixes, Prefix
 from data_structure.router import Routers, Router
 import numpy as np
 import pandas as pd
+from multiprocessing import Pool
+import re
 
 class Internet:
     def __init__(self):
@@ -15,6 +17,9 @@ class Internet:
         self.prefixes = Prefixes()
         self.routers = Routers()
         self.ASs = ASs()
+        self.p_pool = Pool()
+    def close(self):
+        self.p_pool.close()
     def build_structure(self, parsed_obj):
         if(parsed_obj.label == "shodan"):
             return self.build_structure_shodan(parsed_obj)
@@ -33,21 +38,25 @@ class Internet:
         mode = parsed_obj.data['Withdraw or Announce']
         AS_num = int(parsed_obj.data['PeerAS'])
         timestamp = float(parsed_obj.data['unix time in seconds'])
+        AS_path = parsed_obj.data['AS_PATH']
+        origin = AS_path.split(' ')[-1] if AS_path else None
         if mode == 'A' or mode == 'B':
             # router
             if router_ip not in self.routers.dict:
-                self.routers.dict[router_ip] = Router(prefix_set={prefix}, ip=router_ip, AS=AS_num)
+                self.routers.dict[router_ip] = Router(prefix_set={prefix}, AS=AS_num)
             else:
                 self.routers.dict[router_ip].prefix_set.add(prefix)
             # prefix
             if prefix not in self.prefixes.dict:
                 # add only curr router or all routers on path to list?
-                self.prefixes.dict[prefix] = Prefix(prefix, broadcast_router_set={router_ip})
+                self.prefixes.dict[prefix] = Prefix(broadcast_router_set={router_ip}, origin_set={origin} if origin else None)
             else:
                 self.prefixes.dict[prefix].broadcast_router_set.add(router_ip)
+                if origin:
+                    self.prefixes.dict[prefix].origin_set.add(origin)
             # AS
             if AS_num not in self.ASs.dict:
-                self.ASs.dict[AS_num] = AS(number=AS_num, router_set={router_ip})
+                self.ASs.dict[AS_num] = AS(router_set={router_ip})
             else:
                 self.ASs.dict[AS_num].router_set.add(router_ip)
             self.routers.dict[router_ip].announce_time.append(timestamp)
@@ -67,7 +76,7 @@ class Internet:
                     pass
             # AS
             if AS_num not in self.ASs.dict:
-                self.ASs.dict[AS_num] = AS(number=AS_num, router_set={router_ip})
+                self.ASs.dict[AS_num] = AS(router_set={router_ip})
             else:
                 self.ASs.dict[AS_num].router_set.add(router_ip)
             # put a timestamp in router
@@ -120,7 +129,14 @@ class Internet:
     
     def get_hijacked_prefix(self, start_time, end_time):
         ret = []
-        for _, prefix in self.prefixes.dict.items():
-            if len(prefix.broadcast_router_set) > 1:
-                ret.append(prefix.prefix)
+        for prefix, prefix_data in self.prefixes.dict.items():
+            if len(prefix_data.broadcast_router_set) > 1:
+                ret.append(prefix)
+        return ret
+    
+    def get_unstable_prefix(self, start_time, end_time):
+        ret = []
+        for prefix, prefix_data in self.prefixes.dict.items():
+            if len(prefix_data.origin_set) > 2:
+                ret.append(prefix)
         return ret
