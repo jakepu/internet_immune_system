@@ -16,12 +16,14 @@ class BGPCollector(BaseCollector):
     def check_new_update(self, dry_run=None):
         # dry run: rsync -avz -n --stats rsync://archive.routeviews.org/routeviews/bgpdata/ .
         print('rsync from online server to local path:',self.local_path)
-        # if dry_run is None:
-        #     dry_run = ''
-        # else:
-        #     dry_run = '-n'
-        # if subprocess.check_output(["rsync","-aiz", dry_run, self.source_url, self.local_path]) == '':
-        #     print('BGP Collector found no new files')
-        #     return False
+        if dry_run is None:
+            if subprocess.check_output(["rsync","-aiz", self.source_url, self.local_path]) == '':
+                print('BGP Collector found no new files')
+                return False
+        else:
+            dry_run = '-n'
+            if subprocess.check_output(["rsync","-aiz", dry_run, self.source_url, self.local_path]) == '':
+                print('BGP Collector found no new files')
+                return False
         print('BGP Collector rsynced new files')
         return True

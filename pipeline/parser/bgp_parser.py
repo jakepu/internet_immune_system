@@ -15,9 +15,9 @@ from parser.base_parser import BaseParser
 
 class BGPParser(BaseParser):
 
-    def __init__(self, dry_run=None): # actual deployment: collector = BGPCollector()
+    def __init__(self, **kwargs): # actual deployment: collector = BGPCollector()
         # self._data_src = collector.local_path
-        self.collector = BGPCollector(dry_run=dry_run)
+        self.collector = BGPCollector(**kwargs)
         self._data_src = self.collector.local_path
         self._dump_exec_path = os.path.dirname(os.path.realpath(__file__)) + '/../externals/bgpdump/bgpdump'
         self._dump_exec_path = os.path.realpath(self._dump_exec_path)

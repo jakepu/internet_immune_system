@@ -7,7 +7,6 @@ bgpdump-config.h.in
 config.log
 config.status
 configure
-bgpdump
 testbgpdump
 libbgpdump.a
 libbgpdump.so
